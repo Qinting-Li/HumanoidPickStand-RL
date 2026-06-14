@@ -1,0 +1,7 @@
+*.stl binary
+*.STL binary
+*.zip binary
+*.pth binary
+*.pkl binary
+*.npz binary
+*.mat binary

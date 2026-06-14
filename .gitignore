@@ -1,0 +1,16 @@
+.venv/
+__pycache__/
+*.py[cod]
+
+logs/
+diagnostics/*.csv
+diagnostics/summary.json
+videos/
+
+.pytest_cache/
+MUJOCO_LOG.TXT
+assets/meshes/.fr-*/
+
+*.egg-info/
+dist/
+build/
