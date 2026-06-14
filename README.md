@@ -135,4 +135,3 @@ behavior, PD action shape, and a short PD rollout with no NaN/Inf state.
 - Add benchmark result tables and seed-controlled evaluation manifests.
 - Add CI for asset validation and headless MuJoCo tests.
 - Publish trained reference policies only after simulator stability criteria pass.
-

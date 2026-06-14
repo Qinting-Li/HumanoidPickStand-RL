@@ -1,16 +1,49 @@
-.venv/
+# Python cache and build outputs
 __pycache__/
 *.py[cod]
+*$py.class
+*.so
+build/
+dist/
+*.egg-info/
+.eggs/
+wheels/
 
+# Virtual environments
+.venv/
+env/
+venv/
+ENV/
+
+# Test and coverage outputs
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+.hypothesis/
+
+# Benchmark-generated outputs
 logs/
 diagnostics/*.csv
 diagnostics/summary.json
 videos/
-
-.pytest_cache/
 MUJOCO_LOG.TXT
+
+# Temporary exporter artifacts
 assets/meshes/.fr-*/
 
-*.egg-info/
-dist/
-build/
+# Local editor and tool caches
+.cache/
+.mypy_cache/
+.ruff_cache/
+.pyre/
+.idea/
+.vscode/
+
+# Local environment files
+.env
+.envrc
+.pypirc
+*ssh_known_hosts
