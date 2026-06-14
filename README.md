@@ -4,7 +4,7 @@ An open-source MuJoCo/Gymnasium benchmark for validating humanoid simulation ass
 
 This project is built around a 26-actuator humanoid model exported from URDF and compiled for MuJoCo. The focus is not a polished RL demo, but a reproducible engineering pipeline for asset validation, simulator stability diagnosis, controller baselines, and policy evaluation.
 
-## Why This Benchmark Exists
+## Motivation
 
 Humanoid RL is expensive to debug when the simulator itself is unstable. This repository provides a structured workflow to verify that the robot model loads correctly, resets deterministically, exposes useful diagnostics, and fails clearly when numerical instability occurs.
 
