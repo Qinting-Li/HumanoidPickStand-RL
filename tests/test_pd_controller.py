@@ -45,3 +45,27 @@ def test_short_pd_rollout_has_no_nan_or_inf():
         if terminated or truncated:
             break
     env.close()
+
+
+def test_pd_standing_rollout_remains_upright():
+    env = make_env(max_steps=500)
+    controller = PDStandController()
+    env.reset(seed=3)
+    min_height = 10.0
+    min_up = 10.0
+    terminated = False
+
+    for _ in range(500):
+        obs, reward, terminated, truncated, info = env.step(controller.predict(env))
+        min_height = min(min_height, info.get("pelvis_height", 0.0))
+        min_up = min(min_up, info.get("torso_up", 0.0))
+        assert np.isfinite(obs).all()
+        assert np.isfinite(reward)
+        assert not info.get("unstable", False)
+        if terminated or truncated:
+            break
+
+    assert not terminated
+    assert min_height > 0.80
+    assert min_up > 0.95
+    env.close()

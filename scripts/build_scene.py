@@ -157,6 +157,56 @@ def _collect_geom_names(body: ET.Element):
     return [g.get("name") for g in body.findall("geom") if g.get("name")]
 
 
+def _configure_robot_collision_masks(worldbody: ET.Element):
+    """Disable robot self-collision while keeping useful external contacts.
+
+    The imported CAD meshes overlap at adjacent links. Allowing robot geoms to
+    collide with each other creates large internal contact forces that make the
+    humanoid fall before balance or grasp policies can be evaluated.
+
+    Collision bits:
+    - robot: 1
+    - world: 2
+    - object: 4
+    """
+    for body in worldbody.iter("body"):
+        if body.get("name") == "pick_object":
+            continue
+        for geom in body.findall("geom"):
+            if geom.get("group") == "1" or geom.get("contype") == "0":
+                geom.set("contype", "0")
+                geom.set("conaffinity", "0")
+            else:
+                geom.set("contype", "1")
+                geom.set("conaffinity", "6")
+                geom.set("condim", "4")
+
+
+def _add_box_geom(
+    body: ET.Element,
+    name: str,
+    pos: str,
+    size: str,
+    rgba: str,
+    friction: str,
+):
+    """Add a simple collision box that belongs to the robot collision group."""
+    existing = body.find(f"geom[@name='{name}']")
+    if existing is not None:
+        return existing
+    geom = ET.SubElement(body, "geom")
+    geom.set("name", name)
+    geom.set("type", "box")
+    geom.set("pos", pos)
+    geom.set("size", size)
+    geom.set("rgba", rgba)
+    geom.set("friction", friction)
+    geom.set("condim", "4")
+    geom.set("contype", "1")
+    geom.set("conaffinity", "6")
+    return geom
+
+
 def postprocess_mjcf(mjcf_path: str) -> str:
     """Augment the raw MJCF with scene elements and save as scene.xml."""
     tree = ET.parse(mjcf_path)
@@ -235,8 +285,8 @@ def postprocess_mjcf(mjcf_path: str) -> str:
     ground.set("size", "10 10 0.1")
     ground.set("rgba", "0.8 0.9 0.8 1")
     ground.set("friction", "1.0 0.005 0.0001")
-    ground.set("contype", "1")
-    ground.set("conaffinity", "1")
+    ground.set("contype", "2")
+    ground.set("conaffinity", "5")
 
     # Lights
     for lname, lpos, ldir in [
@@ -270,8 +320,8 @@ def postprocess_mjcf(mjcf_path: str) -> str:
     obj_geom.set("mass", "0.5")
     obj_geom.set("friction", "1.0 0.005 0.0001")
     obj_geom.set("condim", "4")
-    obj_geom.set("contype", "1")
-    obj_geom.set("conaffinity", "1")
+    obj_geom.set("contype", "4")
+    obj_geom.set("conaffinity", "3")
     obj_site = ET.SubElement(obj_body, "site")
     obj_site.set("name", "object_site")
     obj_site.set("size", "0.005")
@@ -298,6 +348,25 @@ def postprocess_mjcf(mjcf_path: str) -> str:
     else:
         print("  WARNING: Could not find root body to add freejoint!")
 
+    _configure_robot_collision_masks(worldbody)
+
+    # Simple foot soles provide stable support contacts. They supplement the
+    # visual CAD meshes, whose detailed shape is not a good primary collider.
+    for foot_name, sole_name in [
+        ("ankle_roll_l_link", "left_sole_collision"),
+        ("ankle_roll_r_link", "right_sole_collision"),
+    ]:
+        foot = _find_body(worldbody, foot_name)
+        if foot is not None:
+            _add_box_geom(
+                foot,
+                sole_name,
+                "0.035 0 -0.10",
+                "0.12 0.045 0.025",
+                "0.05 0.05 0.05 0.35",
+                "1.4 0.01 0.001",
+            )
+
     # ---- Add sites on hand links for contact sensing ---------------------
     for hand_name, site_name in [
         ("L_hand_base_link", "l_palm_site"),
@@ -305,6 +374,15 @@ def postprocess_mjcf(mjcf_path: str) -> str:
     ]:
         hand = _find_body(worldbody, hand_name)
         if hand is not None:
+            palm_name = "l_palm_collision" if hand_name.startswith("L_") else "r_palm_collision"
+            _add_box_geom(
+                hand,
+                palm_name,
+                "0 -0.07 0",
+                "0.035 0.025 0.045",
+                "0 1 0 0.2",
+                "4.0 0.01 0.001",
+            )
             site = ET.SubElement(hand, "site")
             site.set("name", site_name)
             site.set("pos", "0 -0.07 0")
@@ -372,6 +450,8 @@ def postprocess_mjcf(mjcf_path: str) -> str:
                 hand_geoms.append(gname)
                 # Also set high friction directly on these geoms
                 g.set("friction", "5.0 0.01 0.001")
+                g.set("contype", "1")
+                g.set("conaffinity", "6")
 
     for gname in hand_geoms:
         pair = ET.SubElement(contact, "pair")

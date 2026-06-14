@@ -18,7 +18,7 @@ structured to support those engineering workflows:
 - URDF/MJCF mesh validation
 - MuJoCo model sanity checks
 - repeatable diagnostic rollouts
-- classical PD standing baseline
+- classical PD standing baseline with 10-second stability regression tests
 - benchmark metrics for random, scripted, and RL policies
 - tests that catch broken assets and NaN/Inf simulation failures
 
@@ -118,10 +118,17 @@ pytest tests -q
 The tests verify asset references, MuJoCo loading, Gymnasium reset/step API
 behavior, PD action shape, and a short PD rollout with no NaN/Inf state.
 
+## Stability Fixes
+
+The MuJoCo scene disables robot self-collision for imported CAD mesh geoms while
+preserving robot-ground, robot-object, and object-ground contacts. It also adds
+simple box collision geoms for both soles and palms. This avoids internal mesh
+contacts at adjacent links and gives the benchmark stable support contacts.
+
 ## Known Limitations
 
-- The current PD standing controller is a baseline diagnostic controller, not a
-  production whole-body balance controller.
+- The current PD standing controller is a diagnostic standing controller, not a
+  full pick-and-stand controller.
 - Zero-action falling is expected and is not treated as a simulator bug.
 - The grasp/lift/stand-up task phases define a protocol and reward decomposition,
   but high-success policies still require training and tuning.

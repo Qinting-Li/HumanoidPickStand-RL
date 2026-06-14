@@ -12,6 +12,10 @@ Numerical instability is different. Treat the following as fatal:
 
 ## Important Parameters
 
+- collision masks: imported CAD meshes should not collide with adjacent robot
+  links. This benchmark uses robot bit `1`, world bit `2`, and object bit `4`.
+  Robot geoms collide with world/object but not robot; object geoms collide with
+  robot/world; world geoms collide with robot/object.
 - `timestep`: smaller values usually improve contact stability but cost more.
 - solver iterations: more iterations can stabilize contact-rich scenes.
 - damping and armature: modest values reduce CAD-import chatter; excessive
@@ -31,3 +35,11 @@ python scripts/run_pd_stand.py
 
 Diagnostics write CSV traces to `diagnostics/` and summarize fatal instability
 in `diagnostics/summary.json`.
+
+## Current Root-Cause Guardrail
+
+The original scene allowed robot mesh self-collision at reset, including pelvis
+to hip, knee to ankle, and elbow to wrist contacts. That internal contact field
+made the humanoid fall before reaching the task. Regression tests now verify
+that reset has foot-ground and object-ground contacts but no robot self-contact,
+and that the PD standing baseline remains upright for 10 seconds.
